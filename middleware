@@ -1,0 +1,35 @@
+const db = require('../database');
+
+async function addPerson(req, res, next) {
+    let fullName = req.body.full_name;
+    let query = "INSERT INTO individuals (full_name) VALUES (?);";
+    const promisePool = db.promise();
+
+    try {
+        const [result] = await promisePool.query(query, [fullName]);
+        req.insertId = result.insertId;
+        req.success = true;
+    } catch (err) {
+        console.error("DB Error:", err);
+        req.success = false;
+        return res.status(500).json({ message: "שגיאת מסד נתונים" });
+    }
+    next();
+}
+
+async function listPeople(req, res, next) {
+    let query = "SELECT * FROM individuals;";
+    const promisePool = db.promise();
+
+    try {
+        const [rows] = await promisePool.query(query);
+        req.success = true;
+        req.people = rows;
+    } catch (err) {
+        req.success = false;
+        return res.status(500).json({ message: "שגיאת מסד נתונים" });
+    }
+    next();
+}
+
+module.exports = { addPerson, listPeople };
