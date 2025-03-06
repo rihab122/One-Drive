@@ -47,3 +47,37 @@ async function fetchReadings(req, res, next) {
     }
     next();
 }
+async function fetchReadingHistory(req, res, next) {
+    const sql = "SELECT * FROM pressure_readings ORDER BY recorded_at DESC";
+
+    try {
+        const [results] = await db.promise().query(sql);
+        if (!results.length) {
+            req.success = true;
+            req.readings = [];
+            return next();
+        }
+
+        let totalSystolic = 0, totalDiastolic = 0, count = results.length;
+        results.forEach(entry => {
+            totalSystolic += entry.high_pressure;
+            totalDiastolic += entry.low_pressure;
+        });
+
+        let avgSys = totalSystolic / count;
+        let avgDia = totalDiastolic / count;
+
+        req.readings = results.map(entry => ({
+            ...entry,
+            abnormal: entry.high_pressure > avgSys * 1.2 || entry.low_pressure > avgDia * 1.2
+        }));
+
+        req.success = true;
+    } catch (err) {
+        console.error("Database Query Error:", err);
+        req.success = false;
+        return res.status(500).json({ message: "שגיאת מסד נתונים" });
+    }
+    next();
+}
+
