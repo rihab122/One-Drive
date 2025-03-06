@@ -35,3 +35,17 @@ router.get('/log/:person_id', fetchReadings, (req, res) => {
 });
 
 module.exports = router;
+const express = require('express');
+const router = express.Router();
+const { addNewReading } = require('./middleware/readingsMiddleware');
+
+router.post('/', addNewReading, (req, res) => {
+    if (req.success) {
+        res.status(201).json({ message: "מדידה נוספה בהצלחה", readingId: req.insertId });
+    } else {
+        res.status(500).json({ message: "שגיאה בהוספת מדידה" });
+    }
+});
+
+module.exports = router;
+
