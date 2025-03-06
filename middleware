@@ -33,3 +33,17 @@ async function listPeople(req, res, next) {
 }
 
 module.exports = { addPerson, listPeople };
+
+async function fetchReadings(req, res, next) {
+    const sql = "SELECT * FROM pressure_readings WHERE person_id = ? ORDER BY recorded_at DESC";
+    try {
+        const [data] = await db.promise().query(sql, [req.params.person_id]);
+        req.success = true;
+        req.readings = data;
+    } catch (err) {
+        console.error("DB Error:", err);
+        req.success = false;
+        return res.status(500).json({ message: "שגיאת מסד נתונים" });
+    }
+    next();
+}
