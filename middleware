@@ -81,3 +81,32 @@ async function fetchReadingHistory(req, res, next) {
     next();
 }
 
+
+async function computeMonthlyStats(req, res, next) {
+    const { year, month } = req.params;
+    const baseQuery = "SELECT person_id, ROUND(AVG(high_pressure), 2) AS avg_high, ROUND(AVG(low_pressure), 2) AS avg_low";
+    const abnormalQuery = `, SUM(
+            CASE 
+                WHEN high_pressure > (SELECT AVG(high_pressure) * 1.2 FROM pressure_readings) 
+                OR low_pressure > (SELECT AVG(low_pressure) * 1.2 FROM pressure_readings) 
+                THEN 1 ELSE 0 
+            END) AS abnormal_count`;
+    const condition = " FROM pressure_readings WHERE YEAR(recorded_at) = ? AND MONTH(recorded_at) = ?";
+    const groupBy = " GROUP BY person_id ORDER BY person_id";
+
+    const fullQuery = baseQuery + abnormalQuery + condition + groupBy;
+
+    try {
+        const [results] = await db.promise().query(fullQuery, [year, month]);
+        req.success = true;
+        req.summary = results;
+    } catch (err) {
+        console.error("⛔ Database Error:", err);
+        req.success = false;
+        return res.status(500).json({ message: "שגיאת מסד נתונים" });
+    }
+    next();
+}
+
+module.exports = { fetchReadings, addNewReading, fetchReadingHistory, computeMonthlyStats };
+
