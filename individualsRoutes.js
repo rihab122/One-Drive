@@ -18,3 +18,17 @@ router.get('/', [IndividualsMiddleware.listPeople], (req, res) => {
 });
 
 module.exports = router;
+
+const express = require('express');
+const router = express.Router();
+const IndividualsMiddleware = require('./middleware/individualsMiddleware');
+
+router.get('/', [IndividualsMiddleware.listPeople], (req, res) => {
+    if (req.success) {
+        res.status(200).json({ msg: "ok", data: req.people });
+    } else {
+        res.status(500).json({ message: "שגיאה בשליפת משתמשים" });
+    }
+});
+
+module.exports = router;
